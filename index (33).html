@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Plantly</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a3d2b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Plantly">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --g900:#0d2818;--g800:#1a3d2b;--g700:#2d6a4f;--g500:#52b788;
+  --g300:#95d5b2;--g100:#d8f3dc;--g50:#f0faf3;
+  --amber:#e9a84c;--coral:#e07a5f;--sky:#4a90d9;
+  --cream:#faf9f6;--white:#ffffff;--text:#111827;--muted:#6b7280;
+  --border:rgba(13,40,24,0.1);--border-md:rgba(13,40,24,0.18);
+  --r-sm:12px;--r-md:16px;--r-lg:20px;--r-xl:28px;
+  --shadow:0 2px 16px rgba(13,40,24,0.08);--shadow-md:0 6px 28px rgba(13,40,24,0.13);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overscroll-behavior:none;}
+body{font-family:'Outfit',sans-serif;background:var(--cream);color:var(--text);max-width:430px;margin:0 auto;min-height:100vh;overflow-x:hidden;position:relative;}
+body::before{content:'';position:fixed;top:-60px;right:-60px;width:220px;height:220px;background:radial-gradient(circle,var(--g100) 0%,transparent 70%);pointer-events:none;z-index:0;}
+body::after{content:'';position:fixed;bottom:-40px;left:-40px;width:180px;height:180px;background:radial-gradient(circle,#fff9ee 0%,transparent 70%);pointer-events:none;z-index:0;}
+
+/* HEADER */
+.header{padding:54px 22px 12px;position:relative;z-index:1;}
+.header-row{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:6px;}
+.header h1{font-family:'Instrument Serif',serif;font-weight:400;font-size:34px;line-height:1.05;color:var(--g800);}
+.header h1 i{font-style:italic;color:var(--g700);}
+.header-sub{font-size:14px;color:var(--muted);margin-bottom:18px;}
+.header-pills{display:flex;gap:8px;align-items:center;}
+.mode-badge{font-size:12px;font-weight:600;padding:5px 12px;border-radius:99px;cursor:pointer;}
+.mode-badge.edit{background:var(--g100);color:var(--g800);}
+.mode-badge.read{background:#fff3cd;color:#856404;}
+.sync-pill{display:flex;align-items:center;gap:6px;background:var(--g100);border:none;border-radius:99px;padding:8px 14px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:500;color:var(--g800);cursor:pointer;transition:background .2s;white-space:nowrap;}
+.sync-pill:hover{background:var(--g300);}
+.sync-pill svg{width:13px;height:13px;flex-shrink:0;}
+.sync-pill.syncing svg{animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* SEARCH */
+.search-wrap{padding:0 22px 14px;position:relative;z-index:1;}
+.search-input{width:100%;border:1px solid var(--border-md);border-radius:var(--r-md);padding:12px 16px 12px 42px;font-family:'Outfit',sans-serif;font-size:15px;background:var(--white);color:var(--text);outline:none;transition:border-color .2s;}
+.search-input:focus{border-color:var(--g500);}
+.search-icon{position:absolute;left:34px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:16px;}
+
+/* TABS */
+.tabs{display:flex;gap:8px;padding:0 22px 18px;position:relative;z-index:1;overflow-x:auto;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{padding:10px 20px;border-radius:99px;font-size:15px;font-weight:500;cursor:pointer;border:1.5px solid transparent;transition:all .2s;background:transparent;color:var(--muted);font-family:'Outfit',sans-serif;white-space:nowrap;flex-shrink:0;}
+.tab.active{background:var(--g800);color:#fff;border-color:var(--g800);}
+.tab:not(.active):hover{border-color:var(--border-md);color:var(--text);}
+.tab .badge{background:var(--coral);color:#fff;border-radius:99px;padding:1px 6px;font-size:11px;margin-left:4px;}
+
+/* PLANT LIST */
+.plant-list{padding:0 16px 100px;display:flex;flex-direction:column;gap:10px;position:relative;z-index:1;}
+.plant-card{background:var(--white);border-radius:var(--r-lg);border:1px solid var(--border);padding:16px;display:flex;gap:14px;align-items:flex-start;cursor:pointer;transition:transform .15s,box-shadow .15s;animation:fadeUp .3s ease both;}
+.plant-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);}
+.plant-card:active{transform:scale(.98);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.plant-thumb{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;}
+.plant-info{flex:1;min-width:0;}
+.plant-name{font-family:'Instrument Serif',serif;font-size:22px;color:var(--g800);margin-bottom:2px;line-height:1.2;}
+.plant-meta{font-size:14px;color:var(--muted);margin-bottom:10px;}
+.tags{display:flex;gap:6px;flex-wrap:wrap;}
+.tag{font-size:13px;font-weight:500;padding:5px 12px;border-radius:99px;display:flex;align-items:center;gap:4px;}
+.tag-ok{background:#e8f5e1;color:#1a6b1a;}
+.tag-warn{background:#fff3cd;color:#856404;}
+.tag-alert{background:#fde8e8;color:#991b1b;}
+.tag-info{background:#e0f0ff;color:#1a4fa6;}
+.tag-neutral{background:var(--g50);color:var(--g700);}
+.plant-chevron{color:var(--muted);font-size:22px;align-self:center;}
+
+/* FAB */
+.fab{position:fixed;bottom:26px;right:max(16px,calc(50% - 215px + 16px));width:58px;height:58px;border-radius:50%;background:var(--g700);border:none;color:#fff;font-size:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(45,106,79,.4);transition:transform .2s,background .2s;z-index:100;}
+.fab:hover{transform:scale(1.08);background:var(--g800);}
+.fab:active{transform:scale(.96);}
+.fab.hidden{display:none;}
+
+/* DETAIL VIEW */
+.view{display:none;position:fixed;inset:0;background:var(--cream);z-index:200;overflow-y:auto;max-width:430px;margin:0 auto;}
+.view.open{display:block;animation:slideUp .28s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+.detail-hero{background:var(--g800);padding:52px 22px 40px;position:relative;overflow:hidden;}
+.detail-hero::after{content:'';position:absolute;bottom:-28px;left:0;right:0;height:56px;background:var(--g800);clip-path:ellipse(55% 100% at 50% 0%);}
+.back-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:99px;padding:9px 18px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:20px;display:inline-flex;align-items:center;gap:6px;transition:background .2s;}
+.back-btn:hover{background:rgba(255,255,255,.25);}
+.hero-top{display:flex;justify-content:space-between;align-items:flex-start;}
+.hero-emoji{font-size:64px;display:block;margin-bottom:10px;line-height:1;}
+.hero-name{font-family:'Instrument Serif',serif;font-size:30px;color:#fff;margin-bottom:3px;}
+.hero-meta{font-size:14px;color:rgba(255,255,255,.7);margin-bottom:10px;}
+.fav-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:99px;padding:8px 14px;font-size:18px;cursor:pointer;transition:background .2s;}
+.settings-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:99px;padding:8px 14px;font-size:18px;cursor:pointer;transition:background .2s;}
+.hero-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.hero-tag{font-size:12px;font-weight:500;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.15);color:#fff;}
+.hero-tag.alert{background:rgba(224,122,95,.35);}
+.hero-tag.warn{background:rgba(233,168,76,.35);}
+.hero-tag.ok{background:rgba(82,183,136,.35);}
+.detail-body{padding:44px 18px 100px;}
+
+/* ACTION GRID */
+.action-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:26px;}
+.action-btn{background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);padding:16px 10px;text-align:center;cursor:pointer;transition:all .15s;font-family:'Outfit',sans-serif;}
+.action-btn:hover{border-color:var(--g500);background:var(--g50);transform:translateY(-1px);}
+.action-btn:active{transform:scale(.97);}
+.action-btn.disabled{opacity:.5;cursor:default;pointer-events:none;}
+.action-icon{font-size:30px;margin-bottom:6px;}
+.action-label{font-size:14px;font-weight:500;color:var(--text);display:block;}
+.action-sub{font-size:12px;color:var(--muted);margin-top:2px;display:block;}
+.action-sub.due{color:var(--coral);font-weight:500;}
+
+/* SECTION */
+.sec-title{font-family:'Instrument Serif',serif;font-size:20px;color:var(--g800);margin-bottom:12px;}
+
+/* NFC CARD */
+.nfc-card{background:var(--g800);border-radius:var(--r-md);padding:16px;margin-bottom:26px;color:#fff;}
+.nfc-title{font-size:14px;font-weight:600;margin-bottom:4px;}
+.nfc-url{font-size:11px;color:rgba(255,255,255,.6);background:rgba(255,255,255,.1);border-radius:8px;padding:8px 12px;margin:10px 0;word-break:break-all;font-family:monospace;}
+.nfc-btn{background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:var(--r-sm);padding:10px 16px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:background .2s;width:100%;margin-top:6px;}
+.nfc-btn:hover{background:rgba(255,255,255,.25);}
+
+/* PHOTOS */
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:26px;}
+.photo-cell{aspect-ratio:1;border-radius:var(--r-sm);overflow:hidden;cursor:pointer;position:relative;}
+.photo-cell img{width:100%;height:100%;object-fit:cover;}
+.photo-add{aspect-ratio:1;border-radius:var(--r-sm);border:1.5px dashed var(--border-md);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;background:var(--white);transition:border-color .2s,background .2s;}
+.photo-add:hover{border-color:var(--g500);background:var(--g50);}
+.photo-add span:first-child{font-size:24px;}
+.photo-add span:last-child{font-size:11px;color:var(--muted);}
+.photo-add.hidden{display:none;}
+
+/* LOG */
+.log-list{display:flex;flex-direction:column;}
+.log-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
+.log-item:last-child{border-bottom:none;}
+.log-timeline{display:flex;flex-direction:column;align-items:center;padding-top:3px;}
+.log-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.log-line{width:1px;flex:1;min-height:16px;background:var(--border);margin-top:3px;}
+.log-content{flex:1;}
+.log-type{font-size:15px;font-weight:500;color:var(--text);}
+.log-note{font-size:13px;color:var(--muted);margin-top:2px;}
+.log-date{font-size:12px;color:var(--muted);margin-top:3px;}
+
+/* SETTINGS CARD */
+.settings-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r-md);padding:14px 16px;margin-bottom:26px;}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);}
+.setting-row:last-child{border-bottom:none;}
+.setting-label{font-size:14px;font-weight:500;color:var(--text);}
+.freq-input{width:58px;border:1px solid var(--border-md);border-radius:8px;padding:6px 8px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;color:var(--g700);text-align:center;outline:none;transition:border-color .2s;background:var(--g50);}
+.freq-input:focus{border-color:var(--g500);}
+
+/* OVERLAYS */
+.overlay{display:none;position:fixed;inset:0;background:rgba(13,40,24,.45);z-index:400;align-items:flex-end;justify-content:center;}
+.overlay.open{display:flex;}
+.sheet{background:var(--white);border-radius:24px 24px 0 0;padding:8px 20px 44px;width:100%;max-width:430px;max-height:92vh;overflow-y:auto;animation:sheetUp .28s ease;}
+@keyframes sheetUp{from{transform:translateY(40px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.sheet-handle{width:36px;height:4px;background:var(--border-md);border-radius:99px;margin:8px auto 18px;}
+.sheet-title{font-family:'Instrument Serif',serif;font-size:23px;color:var(--g800);margin-bottom:18px;}
+.field-label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;display:block;}
+.field-input{width:100%;border:1px solid var(--border-md);border-radius:var(--r-sm);padding:13px 14px;font-family:'Outfit',sans-serif;font-size:15px;color:var(--text);background:var(--white);outline:none;transition:border-color .2s;margin-bottom:14px;}
+.field-input:focus{border-color:var(--g500);}
+textarea.field-input{resize:none;}
+
+.emoji-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.emoji-opt{width:44px;height:44px;border-radius:10px;border:1.5px solid var(--border);background:var(--white);font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.emoji-opt.sel,.emoji-opt:hover{border-color:var(--g500);background:var(--g50);}
+
+.freq-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+.freq-box{background:var(--g50);border:1px solid var(--border);border-radius:var(--r-sm);padding:13px 8px;text-align:center;}
+.freq-box-icon{font-size:22px;margin-bottom:4px;}
+.freq-box-label{font-size:12px;color:var(--muted);margin-bottom:6px;}
+.freq-box input{width:54px;border:1px solid var(--border-md);border-radius:8px;padding:6px;font-size:15px;font-weight:600;color:var(--g700);text-align:center;font-family:'Outfit',sans-serif;outline:none;background:var(--white);transition:border-color .2s;}
+.freq-box input:focus{border-color:var(--g500);}
+.freq-box-unit{font-size:11px;color:var(--muted);margin-top:3px;}
+
+.btn-primary{width:100%;background:var(--g700);color:#fff;border:none;border-radius:var(--r-sm);padding:15px;font-family:'Outfit',sans-serif;font-size:16px;font-weight:600;cursor:pointer;transition:background .2s;margin-bottom:8px;}
+.btn-primary:hover{background:var(--g800);}
+.btn-cancel{width:100%;background:transparent;color:var(--muted);border:none;font-family:'Outfit',sans-serif;font-size:15px;cursor:pointer;padding:10px;}
+.btn-danger{width:100%;background:transparent;color:var(--coral);border:none;font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;cursor:pointer;padding:10px;}
+
+.toggle-row{display:flex;gap:10px;margin-bottom:14px;}
+.toggle-opt{flex:1;border:1.5px solid var(--border);border-radius:var(--r-sm);padding:13px;text-align:center;cursor:pointer;font-family:'Outfit',sans-serif;font-size:14px;font-weight:500;background:var(--white);transition:all .15s;}
+.toggle-opt.sel{border-color:var(--g500);background:var(--g50);color:var(--g700);}
+
+/* PIN OVERLAY */
+.pin-overlay{display:none;position:fixed;inset:0;background:var(--g800);z-index:500;flex-direction:column;align-items:center;justify-content:center;padding:30px;}
+.pin-overlay.open{display:flex;}
+.pin-logo{font-size:60px;margin-bottom:16px;}
+.pin-title{font-family:'Instrument Serif',serif;font-size:28px;color:#fff;margin-bottom:8px;}
+.pin-sub{font-size:14px;color:rgba(255,255,255,.6);margin-bottom:32px;text-align:center;}
+.pin-dots{display:flex;gap:12px;margin-bottom:32px;}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.4);transition:background .2s;}
+.pin-dot.filled{background:#fff;border-color:#fff;}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;width:100%;max-width:280px;}
+.pin-key{background:rgba(255,255,255,.1);border:none;border-radius:var(--r-md);padding:18px;font-family:'Outfit',sans-serif;font-size:22px;font-weight:500;color:#fff;cursor:pointer;transition:background .2s;}
+.pin-key:hover{background:rgba(255,255,255,.2);}
+.pin-key:active{background:rgba(255,255,255,.3);}
+.pin-skip{margin-top:20px;background:transparent;border:none;color:rgba(255,255,255,.5);font-family:'Outfit',sans-serif;font-size:14px;cursor:pointer;padding:10px;}
+
+/* LOADING */
+.loading{position:fixed;inset:0;background:var(--cream);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:300;}
+.loading-icon{font-size:60px;margin-bottom:16px;animation:pulse 1.5s ease infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.loading p{font-size:15px;color:var(--muted);}
+
+/* STATUS BAR */
+.status-bar{background:var(--g50);border-radius:var(--r-sm);padding:10px 14px;margin:0 16px 14px;font-size:13px;color:var(--g700);display:flex;align-items:center;gap:8px;position:relative;z-index:1;}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0;}
+.status-dot.ok{background:var(--g500);}
+
+/* EMPTY */
+.empty{text-align:center;padding:70px 20px;color:var(--muted);position:relative;z-index:1;}
+.empty-icon{font-size:52px;margin-bottom:14px;}
+.empty p{font-size:16px;line-height:1.6;}
+
+/* TOAST */
+.toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:var(--g900);color:#fff;padding:13px 24px;border-radius:99px;font-size:14px;font-weight:500;z-index:600;opacity:0;transition:opacity .3s;white-space:nowrap;pointer-events:none;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading" id="loading">
+  <div class="loading-icon">🌿</div>
+  <p>Loading your plants...</p>
+</div>
+
+<!-- PIN OVERLAY -->
+<div class="pin-overlay" id="pinOverlay">
+  <div class="pin-logo">🌿</div>
+  <div class="pin-title">Plantly</div>
+  <div class="pin-sub">Enter your PIN to edit plants<br>or tap below to view only</div>
+  <div class="pin-dots" id="pinDots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div class="pin-grid">
+    <button class="pin-key" onclick="pinKey('1')">1</button>
+    <button class="pin-key" onclick="pinKey('2')">2</button>
+    <button class="pin-key" onclick="pinKey('3')">3</button>
+    <button class="pin-key" onclick="pinKey('4')">4</button>
+    <button class="pin-key" onclick="pinKey('5')">5</button>
+    <button class="pin-key" onclick="pinKey('6')">6</button>
+    <button class="pin-key" onclick="pinKey('7')">7</button>
+    <button class="pin-key" onclick="pinKey('8')">8</button>
+    <button class="pin-key" onclick="pinKey('9')">9</button>
+    <button class="pin-key" onclick="pinKey('del')">⌫</button>
+    <button class="pin-key" onclick="pinKey('0')">0</button>
+    <button class="pin-key" onclick="pinKey('ok')">✓</button>
+  </div>
+  <button class="pin-skip" onclick="enterReadOnly()">View only (no PIN)</button>
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar" id="statusBar">
+  <div class="status-dot" id="statusDot"></div>
+  <span id="statusText">Connecting...</span>
+</div>
+
+<!-- LIST VIEW -->
+<div id="listView">
+  <div class="header">
+    <div class="header-row">
+      <h1>My<br><i>plants</i></h1>
+      <div class="header-pills">
+        <span class="mode-badge" id="modeBadge" onclick="toggleMode()">✏️ Edit</span>
+        <button class="sync-pill" id="syncBtn" onclick="forceSync()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+          Sync
+        </button>
+      </div>
+    </div>
+    <div class="header-sub" id="headerSub">Loading...</div>
+  </div>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input class="search-input" id="searchInput" placeholder="Search plants..." oninput="renderList()">
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('all',this)">All</button>
+    <button class="tab" onclick="setTab('care',this)">Needs care <span class="badge" id="careBadge">0</span></button>
+    <button class="tab" onclick="setTab('fav',this)">Favourites ⭐</button>
+  </div>
+
+  <div class="plant-list" id="plantList"></div>
+  <div class="empty" id="emptyState" style="display:none">
+    <div class="empty-icon">🌱</div>
+    <p>No plants yet.<br>Tap + to add your first one!</p>
+  </div>
+</div>
+
+<!-- DETAIL VIEW -->
+<div class="view" id="detailView">
+  <div class="detail-hero">
+    <button class="back-btn" onclick="closeDetail()">← Back</button>
+    <div class="hero-top">
+      <div>
+        <span class="hero-emoji" id="dEmoji"></span>
+        <div class="hero-name" id="dName"></div>
+        <div class="hero-meta" id="dMeta"></div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="fav-btn" id="favBtn" onclick="toggleFav()">☆</button>
+        <button class="settings-btn" id="settingsBtn" onclick="openSettings()">⚙️</button>
+      </div>
+    </div>
+    <div class="hero-tags" id="heroTags"></div>
+  </div>
+
+  <div class="detail-body">
+    <div class="action-grid" id="actionGrid">
+      <button class="action-btn" id="btnWater" onclick="logEvent('💧','Watered')">
+        <div class="action-icon">💧</div>
+        <span class="action-label">Water</span>
+        <span class="action-sub" id="sub-water">—</span>
+      </button>
+      <button class="action-btn" id="btnFood" onclick="logEvent('🌿','Fertilized')">
+        <div class="action-icon">🌿</div>
+        <span class="action-label">Fertilize</span>
+        <span class="action-sub" id="sub-food">—</span>
+      </button>
+      <button class="action-btn" id="btnRepot" onclick="logEvent('🪴','Repotted')">
+        <div class="action-icon">🪴</div>
+        <span class="action-label">Repot</span>
+        <span class="action-sub" id="sub-repot">—</span>
+      </button>
+      <button class="action-btn" id="btnPrune" onclick="logEvent('✂️','Pruned')">
+        <div class="action-icon">✂️</div>
+        <span class="action-label">Prune</span>
+        <span class="action-sub" id="sub-prune">—</span>
+      </button>
+    </div>
+
+    <div class="sec-title">📷 Photos</div>
+    <div class="photo-grid" id="photoGrid"></div>
+
+    <div class="sec-title">📋 History</div>
+    <div class="log-list" id="logList"></div>
+  </div>
+</div>
+
+<!-- FAB -->
+<button class="fab hidden" id="fab" onclick="openAddPlant()" title="Add plant">＋</button>
+
+<!-- EVENT SHEET -->
+<div class="overlay" id="eventOverlay" onclick="closeSheet('eventOverlay')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="eventSheetTitle">Log event</div>
+    <label class="field-label">Notes (optional)</label>
+    <textarea class="field-input" id="eventNote" rows="3" placeholder="e.g. used liquid fertilizer..."></textarea>
+    <button class="btn-primary" onclick="saveEvent()">✓ Save event</button>
+    <button class="btn-cancel" onclick="closeSheet('eventOverlay')">Cancel</button>
+  </div>
+</div>
+
+<!-- ADD PLANT SHEET -->
+<div class="overlay" id="addOverlay" onclick="closeSheet('addOverlay')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">New plant 🌱</div>
+    <label class="field-label">Name *</label>
+    <input class="field-input" id="newName" placeholder="e.g. Monstera">
+    <label class="field-label">Species</label>
+    <input class="field-input" id="newSpecies" placeholder="e.g. Monstera deliciosa">
+    <label class="field-label">Location</label>
+    <input class="field-input" id="newLocation" placeholder="e.g. Living room">
+    <label class="field-label">Icon</label>
+    <div class="emoji-grid" id="emojiGrid"></div>
+    <label class="field-label">Care frequencies</label>
+    <div class="freq-grid">
+      <div class="freq-box"><div class="freq-box-icon">💧</div><div class="freq-box-label">Water</div><input type="number" id="freqWater" value="7" min="1" max="60"><div class="freq-box-unit">days</div></div>
+      <div class="freq-box"><div class="freq-box-icon">🌿</div><div class="freq-box-label">Fertilize</div><input type="number" id="freqFood" value="30" min="1" max="365"><div class="freq-box-unit">days</div></div>
+      <div class="freq-box"><div class="freq-box-icon">🪴</div><div class="freq-box-label">Repot</div><input type="number" id="freqRepot" value="365" min="30" max="730"><div class="freq-box-unit">days</div></div>
+    </div>
+    <label class="field-label">Favourite?</label>
+    <div class="toggle-row">
+      <button class="toggle-opt" id="favYes" onclick="setNewFav(true)">⭐ Yes</button>
+      <button class="toggle-opt sel" id="favNo" onclick="setNewFav(false)">Not yet</button>
+    </div>
+    <button class="btn-primary" onclick="savePlant()">✓ Add plant</button>
+    <button class="btn-cancel" onclick="closeSheet('addOverlay')">Cancel</button>
+  </div>
+</div>
+
+<!-- SETTINGS SHEET -->
+<div class="overlay" id="settingsOverlay" onclick="closeSheet('settingsOverlay')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">⚙️ Plant settings</div>
+    <label class="field-label">Name</label>
+    <input class="field-input" id="editName" placeholder="Plant name">
+    <label class="field-label">Species</label>
+    <input class="field-input" id="editSpecies" placeholder="e.g. Monstera deliciosa">
+    <label class="field-label">Location</label>
+    <input class="field-input" id="editLocation" placeholder="e.g. Living room">
+    <label class="field-label">Care frequencies</label>
+    <div class="freq-grid">
+      <div class="freq-box"><div class="freq-box-icon">💧</div><div class="freq-box-label">Water</div><input type="number" id="editFreqWater" min="1" max="60"><div class="freq-box-unit">days</div></div>
+      <div class="freq-box"><div class="freq-box-icon">🌿</div><div class="freq-box-label">Fertilize</div><input type="number" id="editFreqFood" min="1" max="365"><div class="freq-box-unit">days</div></div>
+      <div class="freq-box"><div class="freq-box-icon">🪴</div><div class="freq-box-label">Repot</div><input type="number" id="editFreqRepot" min="30" max="730"><div class="freq-box-unit">days</div></div>
+    </div>
+    <label class="field-label">📡 NFC tag</label>
+    <div class="nfc-card" id="nfcCard"></div>
+    <button class="btn-primary" onclick="saveSettings()">✓ Save changes</button>
+    <button class="btn-danger" onclick="confirmDelete()">🗑️ Delete this plant</button>
+    <button class="btn-cancel" onclick="closeSheet('settingsOverlay')">Cancel</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, set, onValue, remove, push, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC1gYBVZ7d3vLPsxjOnK_ScPCLOTD3HW_8",
+  authDomain: "plantly-22ab5.firebaseapp.com",
+  databaseURL: "https://plantly-22ab5-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "plantly-22ab5",
+  storageBucket: "plantly-22ab5.firebasestorage.app",
+  messagingSenderId: "986433783456",
+  appId: "1:986433783456:web:ae239cef3575ab89696bc5"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+// ══════════════════════════════════
+//  STATE
+// ══════════════════════════════════
+const EMOJIS = ['🌿','🌵','🌸','🌺','🍀','🌻','🌹','🎋','🪴','🌱','🌾','🎍','🌼','🍃','🌴','🪻','🌊','🏵️'];
+const COLORS  = ['#d8f3dc','#fde8d8','#fce8f3','#fef9e7','#e8f5fe','#f3e8ff','#fef0f0'];
+const CORRECT_PIN = '5918';
+const LOG_COLORS  = {'💧':'#4a90d9','🌿':'#2d9a4f','🪴':'#e9a84c','✂️':'#e07a5f'};
+
+let plants       = {};
+let logs         = {};
+let isEditMode   = false;
+let currentTab   = 'all';
+let currentPlant = null;
+let pendingEvent = null;
+let newFav       = false;
+let selEmoji     = '🌿';
+let pinEntry     = '';
+let nfcPlantId   = null;
+
+// ══════════════════════════════════
+//  FIREBASE LISTENERS
+// ══════════════════════════════════
+onValue(ref(db, 'plants'), snap => {
+  plants = snap.val() || {};
+  renderList();
+  updateStatus(true);
+  if (currentPlant) {
+    const p = plants[currentPlant.id];
+    if (p) { currentPlant = {...p, id: currentPlant.id}; }
+  }
+});
+
+onValue(ref(db, 'logs'), snap => {
+  logs = snap.val() || {};
+  if (currentPlant) renderLog(currentPlant.id);
+});
+
+// ══════════════════════════════════
+//  STATUS
+// ══════════════════════════════════
+function updateStatus(connected) {
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  if (connected) {
+    dot.classList.add('ok');
+    const count = Object.keys(plants).length;
+    text.textContent = `${count} plant${count!==1?'s':''} · Live sync ✓`;
+  } else {
+    dot.classList.remove('ok');
+    text.textContent = 'Connecting to Firebase...';
+  }
+  document.getElementById('loading').style.display = 'none';
+}
+
+function forceSync() {
+  showToast('✓ Data is always live with Firebase!');
+}
+
+// ══════════════════════════════════
+//  PIN
+// ══════════════════════════════════
+function showPin() {
+  document.getElementById('pinOverlay').classList.add('open');
+}
+
+window.pinKey = function(k) {
+  if (k === 'del') { pinEntry = pinEntry.slice(0,-1); }
+  else if (k === 'ok') { checkPin(); return; }
+  else if (pinEntry.length < 4) { pinEntry += k; }
+  if (pinEntry.length === 4) checkPin();
+  updatePinDots();
+};
+
+function updatePinDots() {
+  for (let i=0; i<4; i++) {
+    document.getElementById('pd'+i).classList.toggle('filled', i < pinEntry.length);
+  }
+}
+
+function checkPin() {
+  if (pinEntry === CORRECT_PIN) {
+    isEditMode = true;
+    document.getElementById('pinOverlay').classList.remove('open');
+    updateModeUI();
+    showToast('✓ Edit mode enabled');
+    if (nfcPlantId) openPlantById(nfcPlantId);
+  } else {
+    pinEntry = '';
+    updatePinDots();
+    showToast('⚠️ Wrong PIN');
+  }
+}
+
+window.enterReadOnly = function() {
+  isEditMode = false;
+  document.getElementById('pinOverlay').classList.remove('open');
+  updateModeUI();
+  if (nfcPlantId) openPlantById(nfcPlantId);
+};
+
+function updateModeUI() {
+  const badge = document.getElementById('modeBadge');
+  badge.textContent = isEditMode ? '✏️ Edit' : '👁️ View';
+  badge.className = 'mode-badge ' + (isEditMode ? 'edit' : 'read');
+  document.getElementById('fab').classList.toggle('hidden', !isEditMode);
+  // Action buttons
+  ['btnWater','btnFood','btnRepot','btnPrune'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.classList.toggle('disabled', !isEditMode);
+  });
+  // Settings button
+  const sb = document.getElementById('settingsBtn');
+  if (sb) sb.style.display = isEditMode ? '' : 'none';
+  const fb = document.getElementById('favBtn');
+  if (fb) fb.style.display = isEditMode ? '' : 'none';
+}
+
+window.toggleMode = function() {
+  if (isEditMode) {
+    isEditMode = false;
+    updateModeUI();
+    showToast('👁️ View only mode');
+  } else {
+    pinEntry = '';
+    updatePinDots();
+    showPin();
+  }
+};
+
+// ══════════════════════════════════
+//  RENDER LIST
+// ══════════════════════════════════
+function renderList() {
+  const list  = document.getElementById('plantList');
+  const empty = document.getElementById('emptyState');
+  const q     = document.getElementById('searchInput').value.toLowerCase();
+
+  let data = Object.entries(plants).map(([id,p]) => ({...p,id}));
+  if (currentTab === 'care') data = data.filter(p => needsCare(p).length > 0);
+  if (currentTab === 'fav')  data = data.filter(p => p.fav);
+  if (q) data = data.filter(p => p.name?.toLowerCase().includes(q) || p.species?.toLowerCase().includes(q));
+
+  const careCount = Object.entries(plants).filter(([,p]) => needsCare(p).length > 0).length;
+  document.getElementById('careBadge').textContent = careCount;
+  document.getElementById('headerSub').textContent =
+    `${Object.keys(plants).length} plant${Object.keys(plants).length!==1?'s':''} · ${careCount} need care`;
+
+  list.innerHTML = '';
+  if (!data.length) { empty.style.display='block'; return; }
+  empty.style.display = 'none';
+
+  data.forEach((p, i) => {
+    const care = needsCare(p);
+    const lw = lastLog(p.id,'💧');
+    const lf = lastLog(p.id,'🌿');
+    const lr = lastLog(p.id,'🪴');
+    const tags = [];
+    if (lw) {
+      const d = daysSince(lw.date);
+      tags.push(`<span class="tag ${d >= p.freqWater ? 'tag-alert':'tag-ok'}">💧 ${d===0?'today':d+'d ago'}</span>`);
+    } else tags.push(`<span class="tag tag-alert">💧 never</span>`);
+    if (lf) tags.push(`<span class="tag tag-info">🌿 ${daysSince(lf.date)}d ago</span>`);
+    if (lr && daysSince(lr.date) >= p.freqRepot) tags.push(`<span class="tag tag-warn">🪴 repot!</span>`);
+    if (p.fav) tags.push(`<span class="tag tag-neutral">⭐</span>`);
+
+    const card = document.createElement('div');
+    card.className = 'plant-card';
+    card.style.animationDelay = (i*.05)+'s';
+    card.onclick = () => openDetail(p.id);
+    card.innerHTML = `
+      <div class="plant-thumb" style="background:${p.color||COLORS[0]}">${p.emoji||'🌿'}</div>
+      <div class="plant-info">
+        <div class="plant-name">${p.name}</div>
+        <div class="plant-meta">${[p.species,p.location].filter(Boolean).join(' · ')||'—'}</div>
+        <div class="tags">${tags.join('')}</div>
+      </div>
+      <div class="plant-chevron">›</div>`;
+    list.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════
+//  CARE LOGIC
+// ══════════════════════════════════
+function needsCare(p) {
+  const issues = [];
+  const lw = lastLog(p.id,'💧');
+  const lf = lastLog(p.id,'🌿');
+  const lr = lastLog(p.id,'🪴');
+  if (!lw || daysSince(lw.date) >= p.freqWater) issues.push('water');
+  if (!lf || daysSince(lf.date) >= p.freqFood)  issues.push('food');
+  if (!lr || daysSince(lr.date) >= p.freqRepot) issues.push('repot');
+  return issues;
+}
+
+function lastLog(plantId, type) {
+  return Object.values(logs)
+    .filter(l => l.plantId === plantId && l.type === type)
+    .sort((a,b) => new Date(b.date) - new Date(a.date))[0] || null;
+}
+
+function daysSince(iso) { return Math.floor((Date.now()-new Date(iso))/86400000); }
+
+function fmtDate(iso) {
+  if (!iso) return 'never';
+  return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+
+function subLabel(plantId, type, freq) {
+  const l = lastLog(plantId, type);
+  if (!l) return 'never';
+  const d = daysSince(l.date);
+  return (d >= freq ? '⚠️ ' : '') + (d===0?'today':d+'d ago');
+}
+
+// ══════════════════════════════════
+//  DETAIL
+// ══════════════════════════════════
+function openDetail(id) {
+  const p = plants[id];
+  if (!p) return;
+  currentPlant = {...p, id};
+  document.getElementById('dEmoji').textContent = p.emoji||'🌿';
+  document.getElementById('dName').textContent  = p.name;
+  document.getElementById('dMeta').textContent  = [p.species,p.location].filter(Boolean).join(' · ')||'—';
+  document.getElementById('favBtn').textContent = p.fav ? '⭐' : '☆';
+
+  const care = needsCare(currentPlant);
+  const heroTags = [];
+  if (care.includes('water')) heroTags.push(`<span class="hero-tag alert">💧 Needs water</span>`);
+  if (care.includes('food'))  heroTags.push(`<span class="hero-tag warn">🌿 Needs fertilizer</span>`);
+  if (care.includes('repot')) heroTags.push(`<span class="hero-tag warn">🪴 Repot due</span>`);
+  if (!care.length)           heroTags.push(`<span class="hero-tag ok">✓ All good</span>`);
+  document.getElementById('heroTags').innerHTML = heroTags.join('');
+
+  document.getElementById('sub-water').textContent = subLabel(id,'💧',p.freqWater);
+  document.getElementById('sub-water').className   = 'action-sub'+(care.includes('water')?' due':'');
+  document.getElementById('sub-food').textContent  = subLabel(id,'🌿',p.freqFood);
+  document.getElementById('sub-food').className    = 'action-sub'+(care.includes('food')?' due':'');
+  document.getElementById('sub-repot').textContent = subLabel(id,'🪴',p.freqRepot);
+  document.getElementById('sub-repot').className   = 'action-sub'+(care.includes('repot')?' due':'');
+  document.getElementById('sub-prune').textContent = subLabel(id,'✂️',9999);
+  document.getElementById('sub-prune').className   = 'action-sub';
+
+  updateModeUI();
+  renderPhotos(id);
+  renderLog(id);
+  document.getElementById('detailView').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function openPlantById(id) {
+  if (plants[id]) openDetail(id);
+  else showToast('⚠️ Plant not found');
+}
+
+window.closeDetail = function() {
+  document.getElementById('detailView').classList.remove('open');
+  document.body.style.overflow = '';
+};
+
+window.toggleFav = function() {
+  if (!isEditMode) return;
+  currentPlant.fav = !currentPlant.fav;
+  document.getElementById('favBtn').textContent = currentPlant.fav ? '⭐' : '☆';
+  set(ref(db, `plants/${currentPlant.id}/fav`), currentPlant.fav);
+  showToast(currentPlant.fav ? '⭐ Added to favourites' : 'Removed from favourites');
+};
+
+// ══════════════════════════════════
+//  PHOTOS (local only on edit device)
+// ══════════════════════════════════
+function renderPhotos(id) {
+  const grid = document.getElementById('photoGrid');
+  const photos = JSON.parse(localStorage.getItem('pln_photos_'+id)||'[]');
+  grid.innerHTML = '';
+  photos.forEach(src => {
+    const cell = document.createElement('div');
+    cell.className = 'photo-cell';
+    cell.innerHTML = `<img src="${src}" alt="plant photo">`;
+    grid.appendChild(cell);
+  });
+  if (isEditMode) {
+    const add = document.createElement('div');
+    add.className = 'photo-add';
+    add.innerHTML = '<span>📷</span><span>Add photo</span>';
+    add.onclick = () => pickPhoto(id);
+    grid.appendChild(add);
+  }
+  if (!photos.length && !isEditMode) {
+    grid.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:10px 0;">No photos yet.</div>';
+  }
+}
+
+function pickPhoto(id) {
+  const inp = document.createElement('input');
+  inp.type='file'; inp.accept='image/*';
+  inp.onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const key = 'pln_photos_'+id;
+      const arr = JSON.parse(localStorage.getItem(key)||'[]');
+      arr.push(ev.target.result);
+      localStorage.setItem(key, JSON.stringify(arr));
+      renderPhotos(id);
+      showToast('📷 Photo added!');
+    };
+    reader.readAsDataURL(file);
+  };
+  inp.click();
+}
+
+// ══════════════════════════════════
+//  LOG
+// ══════════════════════════════════
+function renderLog(id) {
+  const container = document.getElementById('logList');
+  const items = Object.values(logs)
+    .filter(l => l.plantId === id)
+    .sort((a,b) => new Date(b.date)-new Date(a.date));
+  if (!items.length) {
+    container.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:14px 0;">No events recorded yet.</div>';
+    return;
+  }
+  container.innerHTML = items.map((l,i) => `
+    <div class="log-item">
+      <div class="log-timeline">
+        <div class="log-dot" style="background:${LOG_COLORS[l.type]||'#aaa'}"></div>
+        ${i<items.length-1?'<div class="log-line"></div>':''}
+      </div>
+      <div class="log-content">
+        <div class="log-type">${l.type} ${l.label}</div>
+        ${l.note?`<div class="log-note">${l.note}</div>`:''}
+        <div class="log-date">${fmtDate(l.date)}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════
+//  EVENT LOGGING
+// ══════════════════════════════════
+window.logEvent = function(type, label) {
+  if (!isEditMode) { showToast('👁️ View only — enter PIN to edit'); return; }
+  pendingEvent = {type, label};
+  document.getElementById('eventSheetTitle').textContent = `Log: ${type} ${label}`;
+  document.getElementById('eventNote').value = '';
+  openSheet('eventOverlay');
+};
+
+window.saveEvent = async function() {
+  const note = document.getElementById('eventNote').value.trim();
+  const logEntry = {
+    plantId: currentPlant.id,
+    type: pendingEvent.type,
+    label: pendingEvent.label,
+    note,
+    date: new Date().toISOString()
+  };
+  await push(ref(db, 'logs'), logEntry);
+  closeSheet('eventOverlay');
+  showToast(`${pendingEvent.type} ${pendingEvent.label} logged!`);
+};
+
+// ══════════════════════════════════
+//  ADD PLANT
+// ══════════════════════════════════
+window.openAddPlant = function() {
+  newFav=false; selEmoji='🌿';
+  ['newName','newSpecies','newLocation'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('freqWater').value='7';
+  document.getElementById('freqFood').value='30';
+  document.getElementById('freqRepot').value='365';
+  setNewFav(false);
+  const g = document.getElementById('emojiGrid');
+  g.innerHTML = EMOJIS.map(e=>`<button class="emoji-opt${e===selEmoji?' sel':''}" onclick="pickEmoji('${e}',this)">${e}</button>`).join('');
+  openSheet('addOverlay');
+};
+
+window.pickEmoji = function(e,btn) {
+  selEmoji=e;
+  document.querySelectorAll('.emoji-opt').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+};
+
+window.setNewFav = function(v) {
+  newFav=v;
+  document.getElementById('favYes').classList.toggle('sel',v);
+  document.getElementById('favNo').classList.toggle('sel',!v);
+};
+
+window.savePlant = async function() {
+  const name = document.getElementById('newName').value.trim();
+  if (!name) { showToast('⚠️ Please enter a name'); return; }
+  const newRef = push(ref(db,'plants'));
+  const p = {
+    name,
+    species:   document.getElementById('newSpecies').value.trim(),
+    location:  document.getElementById('newLocation').value.trim(),
+    emoji:     selEmoji,
+    color:     COLORS[Object.keys(plants).length % COLORS.length],
+    fav:       newFav,
+    freqWater: parseInt(document.getElementById('freqWater').value)||7,
+    freqFood:  parseInt(document.getElementById('freqFood').value)||30,
+    freqRepot: parseInt(document.getElementById('freqRepot').value)||365,
+    created:   new Date().toISOString()
+  };
+  await set(newRef, p);
+  closeSheet('addOverlay');
+  showToast(`🌱 ${name} added!`);
+};
+
+// ══════════════════════════════════
+//  SETTINGS
+// ══════════════════════════════════
+const BASE_URL = 'https://buongiornoluigi84-dev.github.io/plantly';
+
+window.openSettings = function() {
+  if (!isEditMode) return;
+  const p = currentPlant;
+  document.getElementById('editName').value      = p.name;
+  document.getElementById('editSpecies').value   = p.species||'';
+  document.getElementById('editLocation').value  = p.location||'';
+  document.getElementById('editFreqWater').value = p.freqWater;
+  document.getElementById('editFreqFood').value  = p.freqFood;
+  document.getElementById('editFreqRepot').value = p.freqRepot;
+
+  const nfcUrl = `${BASE_URL}?plant=${p.id}`;
+  document.getElementById('nfcCard').innerHTML = `
+    <div class="nfc-title">📡 NFC Tag ID: ${p.id}</div>
+    <div class="nfc-url">${nfcUrl}</div>
+    <button class="nfc-btn" onclick="copyNfc('${nfcUrl}')">📋 Copy URL for NFC Tools</button>
+    ${('NDEFReader' in window)?`<button class="nfc-btn" onclick="writeNfc('${nfcUrl}')">✍️ Write NFC tag directly</button>`:''}`;
+
+  openSheet('settingsOverlay');
+};
+
+window.saveSettings = async function() {
+  const name = document.getElementById('editName').value.trim();
+  if (!name) { showToast('⚠️ Please enter a name'); return; }
+  const updates = {
+    name,
+    species:   document.getElementById('editSpecies').value.trim(),
+    location:  document.getElementById('editLocation').value.trim(),
+    freqWater: parseInt(document.getElementById('editFreqWater').value)||7,
+    freqFood:  parseInt(document.getElementById('editFreqFood').value)||30,
+    freqRepot: parseInt(document.getElementById('editFreqRepot').value)||365,
+  };
+  await set(ref(db,`plants/${currentPlant.id}`), {...currentPlant, ...updates, id:undefined});
+  closeSheet('settingsOverlay');
+  showToast('✓ Settings saved!');
+};
+
+window.confirmDelete = async function() {
+  if (!confirm(`Delete "${currentPlant.name}"? This cannot be undone.`)) return;
+  await remove(ref(db, `plants/${currentPlant.id}`));
+  // Delete logs for this plant
+  const logSnap = await get(ref(db,'logs'));
+  const allLogs = logSnap.val()||{};
+  for (const [key,l] of Object.entries(allLogs)) {
+    if (l.plantId === currentPlant.id) await remove(ref(db,`logs/${key}`));
+  }
+  closeSheet('settingsOverlay');
+  closeDetail();
+  showToast('🗑️ Plant deleted');
+};
+
+// ══════════════════════════════════
+//  NFC
+// ══════════════════════════════════
+window.copyNfc = function(url) {
+  navigator.clipboard.writeText(url).then(()=>showToast('📋 URL copied!')).catch(()=>prompt('Copy this URL:',url));
+};
+
+window.writeNfc = async function(url) {
+  if (!('NDEFReader' in window)) { showToast('⚠️ NFC not supported'); return; }
+  try {
+    const ndef = new NDEFReader();
+    await ndef.write({records:[{recordType:'url',data:url}]});
+    showToast('✓ NFC tag written!');
+  } catch(e) { showToast('⚠️ NFC write failed: '+e.message); }
+};
+
+// ══════════════════════════════════
+//  SHEETS / TABS
+// ══════════════════════════════════
+window.openSheet  = function(id) { document.getElementById(id).classList.add('open'); }
+window.closeSheet = function(id) { document.getElementById(id).classList.remove('open'); }
+
+window.setTab = function(t, btn) {
+  currentTab = t;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+};
+
+// ══════════════════════════════════
+//  TOAST
+// ══════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+window.showToast = showToast;
+
+// ══════════════════════════════════
+//  INIT
+// ══════════════════════════════════
+// Check NFC param
+nfcPlantId = new URLSearchParams(location.search).get('plant');
+
+// Show PIN on load
+setTimeout(() => showPin(), 500);
+
+// Service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/plantly/sw.js').catch(()=>{});
+}
+
+window.renderList = renderList;
+</script>
+</body>
+</html>
